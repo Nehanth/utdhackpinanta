@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Doctor-Patient Live Video Consultation</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background-color: #f8fafc;
+    }
+
+    .video-container {
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      position: relative;
+      aspect-ratio: 16/9;
+    }
+
+    .pip-video {
+      position: absolute;
+      width: 160px;
+      height: 90px;
+      right: 20px;
+      bottom: 20px;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      border: 2px solid white;
+      z-index: 10;
+      transition: all 0.3s ease;
+    }
+
+    .pip-video:hover {
+      transform: scale(1.05);
+    }
+
+    .capture-btn {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      z-index: 20;
+    }
+
+    .btn {
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+      background-position: right 0.5rem center;
+      background-repeat: no-repeat;
+      background-size: 1.5em 1.5em;
+    }
+
+    .doctor-features {
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .role-doctor .doctor-features {
+      visibility: visible;
+      opacity: 1;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="min-h-screen p-6">
+    <div class="max-w-5xl mx-auto">
+      <header class="mb-8">
+        <h1 class="text-2xl font-semibold text-gray-800 mb-6">Doctor-Patient Video Consultation</h1>
+        <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+          <div class="flex items-center gap-4">
+            <div class="flex-1 max-w-xs">
+              <label for="roleSelect" class="block text-sm font-medium text-gray-700 mb-1">Select Your Role</label>
+              <select id="roleSelect"
+                class="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 bg-white px-4 py-2 text-gray-900">
+                <option value="doctor">Doctor</option>
+                <option value="patient">Patient</option>
+              </select>
+            </div>
+            <button id="joinButton"
+              class="btn bg-blue-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 h-[42px] mt-6">
+              Join Consultation
+
+          </div>
+          <div id="status" class="mt-4 p-3 bg-gray-50 rounded-lg text-gray-600 text-sm"></div>
+        </div>
+      </header>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2">
+          <div class="video-container bg-gray-900">
+            <video id="remoteVideo" autoplay class="w-full h-full object-cover"></video>
+            <div class="pip-video bg-gray-800">
+              <video id="localVideo" autoplay muted playsinline class="w-full h-full object-cover"></video>
+            </div>
+            <button id="captureBtn"
+              class="doctor-features capture-btn bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">
+              Capture for Analysis
+            </button>
+          </div>
+          <div class="doctor-features mt-6 bg-white rounded-lg p-4 shadow-sm">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Wound Analysis Results</h2>
+            <div class="grid grid-cols-3 gap-4">
+              <div>
+                <h3 class="text-sm font-medium text-gray-700 mb-2">Annotated Image</h3>
+                <img id="annotatedImage" src="" alt="Annotated Image"
+                  class="bg-gray-100 rounded-lg aspect-video object-cover">
+              </div>
+              <div>
+                <h3 class="text-sm font-medium text-gray-700 mb-2">Wound Mask</h3>
+                <img id="maskImage" src="" alt="Wound Mask" class="bg-gray-100 rounded-lg aspect-video object-cover">
+              </div>
+              <div>
+                <h3 class="text-sm font-medium text-gray-700 mb-2">Result</h3>
+                <img id="resultImage" src="" alt="Result Image"
+                  class="bg-gray-100 rounded-lg aspect-video object-cover">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="doctor-features lg:block">
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sticky top-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Doctor's Notes</h2>
+            <div class="space-y-4">
+              <div>
+                <label for="doctorNotes" class="block text-sm font-medium text-gray-700 mb-2">Symptoms</label>
+                <textarea id="doctorNotes" rows="8"
+                  class="w-full rounded-lg border border-gray-300 p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+              </div>
+              <button id="aiAnalyzeBtn"
+                class="w-full bg-blue-500 text-white px-4 py-3 rounded-lg hover:bg-blue-600 font-medium transition-colors">
+                Generate AI Analysis
+              </button>
+              <div id="aiAnalysisResult" class="mt-4 p-4 bg-gray-50 rounded-lg text-sm border border-gray-200">
+                AI analysis results will appear here...
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Include your existing scripts -->
+  <script src="wound-analysis.js"></script>
+  <script src="./app.js"></script>
+
+  <!-- Add the AI Integration Script -->
+  <script>
+    // API base URL (adjust if your Flask server is hosted elsewhere)
+    const API_BASE_URL = 'http://localhost:5000'; // Change to your Flask server's URL if different
+
+    // Show/hide doctor features based on role selection
+    document.getElementById('roleSelect').addEventListener('change', function () {
+      document.body.classList.toggle('role-doctor', this.value === 'doctor');
+    });
+
+    // Set initial state
+    document.body.classList.toggle('role-doctor', document.getElementById('roleSelect').value === 'doctor');
+
+    // Handle Generate AI Analysis Button Click
+    document.getElementById('aiAnalyzeBtn').addEventListener('click', async function () {
+      const note = document.getElementById('doctorNotes').value.trim();
+      const resultContainer = document.getElementById('aiAnalysisResult');
+
+      if (!note) {
+        alert('Please enter the doctor\'s notes before generating analysis.');
+        return;
+      }
+
+      resultContainer.textContent = 'Generating AI analysis...';
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/analyze-note`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ note })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          resultContainer.textContent = data.analysis;
+        } else {
+          resultContainer.textContent = `Error: ${data.error || 'Failed to generate analysis.'}`;
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        resultContainer.textContent = 'An error occurred while generating AI analysis.';
+      }
+    });
+
+    // Handle Capture for Analysis Button Click (Existing Feature)
+    document.getElementById('captureBtn').addEventListener('click', async function () {
+      const video = document.getElementById('localVideo');
+      const annotatedImage = document.getElementById('annotatedImage');
+      const maskImage = document.getElementById('maskImage');
+      const resultImage = document.getElementById('resultImage');
+
+      // Create a canvas to capture the current frame
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Convert canvas to data URL (base64)
+      const imageDataURL = canvas.toDataURL('image/jpeg');
+
+      // Show loading state
+      annotatedImage.src = '';
+      maskImage.src = '';
+      resultImage.src = '';
+      document.getElementById('status').textContent = 'Analyzing wound image...';
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/analyze-wound`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ image: imageDataURL })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          // Display the images
+          annotatedImage.src = data.images.annotated;
+          maskImage.src = data.images.mask;
+          resultImage.src = data.images.result;
+
+          // Optionally, display measurements
+          const measurements = data.measurements;
+          document.getElementById('aiAnalysisResult').innerHTML = `
+                        <p><strong>Wound Area:</strong> ${measurements.wound_area} cm²</p>
+                        <p><strong>Custom Aid Area:</strong> ${measurements.custom_aid_area} cm²</p>
+                        <p><strong>Length:</strong> ${measurements.length} cm</p>
+                        <p><strong>Width:</strong> ${measurements.width} cm</p>
+                    `;
+
+          document.getElementById('status').textContent = 'Wound analysis completed successfully.';
+        } else {
+          document.getElementById('status').textContent = `Error: ${data.error || 'Failed to analyze wound image.'}`;
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('status').textContent = 'An error occurred while analyzing the wound image.';
+      }
+    });
+  </script>
+</body>
+
+</html>
